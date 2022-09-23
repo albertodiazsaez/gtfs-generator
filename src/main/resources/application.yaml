@@ -1,0 +1,29 @@
+spring:
+  codec:
+    max-in-memory-size: 10MB
+  main:
+    web-application-type: none
+  batch:
+    jdbc:
+      initialize-schema: always
+  datasource:
+    url: jdbc:h2:file:./src/main/resources/db/h2dbfile
+    username: sa
+    password: password
+    driverClassName: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+  h2:
+    console.enabled: true
+  sql:
+    init:
+      platform: h2
+      mode: always
+
+logging:
+  level:
+    root: INFO
+
+
+   
