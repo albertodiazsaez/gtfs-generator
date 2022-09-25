@@ -62,9 +62,9 @@ public class GetMetrovalenciaSyncData implements Tasklet {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.findAndRegisterModules();
 
-            getNextStationData(objectMapper, jsonObjectSyncData.getJSONArray("estaciones_siguientes"));
             getServicesData(objectMapper, jsonObjectSyncData.getJSONArray("servicios"));
             getDateServicesData(objectMapper, jsonObjectSyncData.getJSONArray("fechas_servicios"));
+            getNextStationData(objectMapper, jsonObjectSyncData.getJSONArray("estaciones_siguientes"));
 
             return RepeatStatus.FINISHED;
 
