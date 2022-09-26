@@ -10,32 +10,35 @@ import lombok.Data;
 @Data
 public class FgvStationDto {
 
-	private Long id;
-	@JsonAlias("estacion_id_FGV")
-	private Long estacionIDFGV;
+    private Long id;
+    @JsonAlias("estacion_id_FGV")
+    private Long estacionIDFGV;
 
-	private String nombre;
+    @JsonAlias("web_id")
+    private Long webID;
 
-	private Long transbordo;
+    private String nombre;
 
-	private Double latitud;
+    private Long transbordo;
 
-	private Double longitud;
+    private Double latitud;
 
-	private String direccion;
+    private Double longitud;
 
-	private String sede;
+    private String direccion;
 
-	@JsonAlias("created_at")
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", locale = "es_ES")
-	private LocalDateTime createdAt;
+    private String sede;
 
-	@JsonAlias("updated_at")
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", locale = "es_ES")
-	private LocalDateTime updatedAt;
+    @JsonAlias("created_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", locale = "es_ES")
+    private LocalDateTime createdAt;
 
-	@JsonAlias("deleted_at")
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", locale = "es_ES")
-	private LocalDateTime deletedAt;
+    @JsonAlias("updated_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", locale = "es_ES")
+    private LocalDateTime updatedAt;
+
+    @JsonAlias("deleted_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", locale = "es_ES")
+    private LocalDateTime deletedAt;
 
 }

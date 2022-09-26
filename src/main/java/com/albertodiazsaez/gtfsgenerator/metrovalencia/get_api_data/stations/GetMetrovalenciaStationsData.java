@@ -3,7 +3,14 @@ package com.albertodiazsaez.gtfsgenerator.metrovalencia.get_api_data.stations;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -41,16 +48,21 @@ public class GetMetrovalenciaStationsData implements Tasklet {
 
             FgvStationDto[] stationsList = responseSpec.bodyToMono(FgvStationDto[].class)
                     .retryWhen(Retry.backoff(10, Duration.ofSeconds(2))).block();
+
+            stationsList = setWebID(stationsList);
+
+            final FgvStationDto[] stationsToSave = stationsList;
+
             log.info("Saving data in local DB");
 
             jdbcTemplate.batchUpdate("INSERT INTO METROVALENCIA.FGV_STATIONS\n"
-                    + "(ID, ESTACION_ID_FGV, NOMBRE, TRANSBORDO, LATITUD, LONGITUD, DIRECCION, SEDE, CREATED_AT, UPDATED_AT, DELETED_AT)\n"
-                    + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", new BatchPreparedStatementSetter() {
+                    + "(ID, ESTACION_ID_FGV, NOMBRE, TRANSBORDO, LATITUD, LONGITUD, DIRECCION, SEDE, CREATED_AT, UPDATED_AT, DELETED_AT, WEB_ID)\n"
+                    + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", new BatchPreparedStatementSetter() {
 
                         @Override
                         public void setValues(PreparedStatement ps, int i) throws SQLException {
 
-                            FgvStationDto fgvStationDto = stationsList[i];
+                            FgvStationDto fgvStationDto = stationsToSave[i];
                             ps.setLong(1, fgvStationDto.getId());
                             ps.setLong(2, fgvStationDto.getEstacionIDFGV());
                             ps.setString(3,
@@ -70,20 +82,77 @@ public class GetMetrovalenciaStationsData implements Tasklet {
                             ps.setString(11,
                                     fgvStationDto.getDeletedAt() != null ? fgvStationDto.getDeletedAt().toString()
                                             : "");
+                            ps.setLong(12, fgvStationDto.getWebID());
 
                         }
 
                         @Override
                         public int getBatchSize() {
-                            return stationsList.length;
+                            return stationsToSave.length;
                         }
                     });
+
             return RepeatStatus.FINISHED;
 
         } catch (Exception e) {
             log.error("GetMetrovalenciaStationsData FAILED. Error: ", e.getMessage());
             throw e;
         }
+    }
+
+    private FgvStationDto[] setWebID(FgvStationDto[] stationsList) {
+
+        Map<String, Long> mapStationsWebIDNames = getMapStationsWebIDNames();
+
+        for (FgvStationDto fgvStationDto : stationsList) {
+            fgvStationDto.setWebID(mapStationsWebIDNames.get(removeStringDashes(fgvStationDto.getNombre())));
+        }
+        return stationsList;
+    }
+
+    private Map<String, Long> getMapStationsWebIDNames() {
+
+        // todo
+        Map<String, Long> mapStationsWebIDNames = new HashMap<>();
+
+        WebClient.ResponseSpec responseSpec = webClient.get()
+                .uri("https://www.metrovalencia.es/es/consulta-de-horarios-y-planificador/").retrieve();
+
+        String stringResponseToken = responseSpec.bodyToMono(String.class).timeout(Duration.ofMinutes(1))
+                .retryWhen(Retry.fixedDelay(10, Duration.ofSeconds(3))).block();
+
+        // @formatter:on
+        Document tokenDoc = Jsoup.parse(stringResponseToken);
+
+        Elements tokenElements = tokenDoc.select(".single-input option");
+
+        for (Element stationElement : tokenElements) {
+
+            Boolean elementIsStation = stationElement.attr("value") != null
+                    && stationElement.attr("value") != StringUtils.EMPTY;
+
+            if (elementIsStation) {
+                mapStationsWebIDNames.put(removeStringDashes(stationElement.text()),
+                        Long.parseLong(stationElement.attr("value")));
+            }
+
+        }
+
+        return mapStationsWebIDNames;
+    }
+
+    private String removeStringDashes(String inputString) {
+
+        String dash = "-";
+        String unicodeDash = "\\u0096";
+        String doubleSpace = " +";
+
+        // @formatter:off
+        return inputString
+                .replaceAll(unicodeDash, StringUtils.SPACE)
+                .replaceAll(dash, StringUtils.SPACE)
+                .replaceAll(doubleSpace, StringUtils.SPACE);
+        // @formatter:on
     }
 
 }

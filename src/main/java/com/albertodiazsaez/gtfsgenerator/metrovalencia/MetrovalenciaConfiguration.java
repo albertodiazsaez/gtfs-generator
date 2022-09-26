@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_api_data.lines.GetMetrovalenciaLinesData;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_api_data.stations.GetMetrovalenciaStationsData;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_api_data.sync.GetMetrovalenciaSyncData;
+import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.services_lookup.ServicesLookupTasklet;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.timetables.TimetableDto;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.timetables.TimetablesItemReader;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.timetables.TimetablesWriter;
@@ -42,11 +43,11 @@ public class MetrovalenciaConfiguration {
         return this.jobBuilderFactory
                 .get("generateGTFSMetrovalencia")
                 .incrementer(new RunIdIncrementer())
-//                .start(getMetrovalenciaTimetables())
+//                .start(getMetrovalenciaServicesLookup())
                 .start(getMetrovalenciaAPIStations())
-                .next(getMetrovalenciaAPILines())
-                .next(getMetrovalenciaAPISync())
-                .next(getMetrovalenciaTimetables())
+//                .next(getMetrovalenciaAPILines())
+//                .next(getMetrovalenciaAPISync())
+//                .next(getMetrovalenciaTimetables())
                 .build();
     }
 
@@ -77,6 +78,13 @@ public class MetrovalenciaConfiguration {
                 .<TimetableDto, TimetableDto>chunk(1)
                 .reader(new TimetablesItemReader(webClientBuilder))
                 .writer(new TimetablesWriter())
+                .build();
+    }
+    
+    @Bean
+    public Step getMetrovalenciaServicesLookup() {
+        return this.stepBuilderFactory.get("getMetrovalenciaServicesLookup")
+                .tasklet(new ServicesLookupTasklet(jdbcTemplate))
                 .build();
     }
 
