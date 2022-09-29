@@ -12,13 +12,16 @@ public class ServicesLookupDto {
     @JsonAlias("SERVICE_DATE")
     private Date serviceDate;
 
-    @JsonAlias("LINE_ID")
-    private Long lineID;
+    @JsonAlias("DATA_STORED")
+    private Boolean dataStored;
 
     @JsonAlias("JOB_INSTANCE_ID")
     private Long jobInstanceID;
 
-    @JsonAlias("DATA_STORED")
-    private Boolean dataStored;
+    @JsonAlias("STATION_ID")
+    private Long stationID;
+
+    @JsonAlias("STATION_WEB_ID")
+    private Long stationWebID;
 
 }

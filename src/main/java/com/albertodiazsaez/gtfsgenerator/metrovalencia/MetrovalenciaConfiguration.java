@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_api_data.lines.GetMetrovalenciaLinesData;
@@ -32,6 +33,9 @@ public class MetrovalenciaConfiguration {
     public JdbcTemplate jdbcTemplate;
 
     @Autowired
+    public NamedParameterJdbcTemplate namedJdbcTemplate;
+
+    @Autowired
     public WebClient webClient;
 
     @Autowired
@@ -43,10 +47,11 @@ public class MetrovalenciaConfiguration {
         return this.jobBuilderFactory
                 .get("generateGTFSMetrovalencia")
                 .incrementer(new RunIdIncrementer())
-//                .start(getMetrovalenciaServicesLookup())
-                .start(getMetrovalenciaAPIStations())
+                .start(getMetrovalenciaServicesLookup())
+//                .start(getMetrovalenciaAPIStations())
 //                .next(getMetrovalenciaAPILines())
 //                .next(getMetrovalenciaAPISync())
+//                .next(getMetrovalenciaServicesLookup())
 //                .next(getMetrovalenciaTimetables())
                 .build();
     }
@@ -84,7 +89,7 @@ public class MetrovalenciaConfiguration {
     @Bean
     public Step getMetrovalenciaServicesLookup() {
         return this.stepBuilderFactory.get("getMetrovalenciaServicesLookup")
-                .tasklet(new ServicesLookupTasklet(jdbcTemplate))
+                .tasklet(new ServicesLookupTasklet(jdbcTemplate, namedJdbcTemplate))
                 .build();
     }
 

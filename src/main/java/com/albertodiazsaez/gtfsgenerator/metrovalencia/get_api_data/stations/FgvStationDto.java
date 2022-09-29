@@ -11,6 +11,7 @@ import lombok.Data;
 public class FgvStationDto {
 
     private Long id;
+
     @JsonAlias("estacion_id_FGV")
     private Long estacionIDFGV;
 
