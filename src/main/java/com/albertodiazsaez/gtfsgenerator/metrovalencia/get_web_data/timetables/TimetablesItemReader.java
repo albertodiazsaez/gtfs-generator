@@ -81,7 +81,6 @@ public class TimetablesItemReader extends ItemStreamSupport implements ItemReade
         String token = StringUtils.EMPTY;
 
         // @formatter:off
- 
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().get()
                 .uri("https://www.metrovalencia.es/es/consulta-de-horarios-y-planificador/").retrieve();

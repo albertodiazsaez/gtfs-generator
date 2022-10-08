@@ -1,11 +1,19 @@
 package com.albertodiazsaez.gtfsgenerator.metrovalencia;
 
+import java.util.List;
+
+import javax.sql.DataSource;
+
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.database.JdbcPagingItemReader;
+import org.springframework.batch.item.database.PagingQueryProvider;
+import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,9 +24,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_api_data.lines.GetMetrovalenciaLinesData;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_api_data.stations.GetMetrovalenciaStationsData;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_api_data.sync.GetMetrovalenciaSyncData;
+import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.services_lookup.ServicesLookupDto;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.services_lookup.ServicesLookupTasklet;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.timetables.TimetableDto;
-import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.timetables.TimetablesItemReader;
 import com.albertodiazsaez.gtfsgenerator.metrovalencia.get_web_data.timetables.TimetablesWriter;
 
 @Configuration
@@ -31,6 +39,9 @@ public class MetrovalenciaConfiguration {
 
     @Autowired
     public JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public DataSource dataSource;
 
     @Autowired
     public NamedParameterJdbcTemplate namedJdbcTemplate;
@@ -47,12 +58,12 @@ public class MetrovalenciaConfiguration {
         return this.jobBuilderFactory
                 .get("generateGTFSMetrovalencia")
                 .incrementer(new RunIdIncrementer())
-                .start(getMetrovalenciaServicesLookup())
-//                .start(getMetrovalenciaAPIStations())
-//                .next(getMetrovalenciaAPILines())
-//                .next(getMetrovalenciaAPISync())
-//                .next(getMetrovalenciaServicesLookup())
-//                .next(getMetrovalenciaTimetables())
+//                .start(getMetrovalenciaTimetables())
+                .start(getMetrovalenciaAPIStations())
+                .next(getMetrovalenciaAPILines())
+                .next(getMetrovalenciaAPISync())
+                .next(getMetrovalenciaServicesLookup())
+  //              .next(getMetrovalenciaTimetables())
                 .build();
     }
 
@@ -79,18 +90,48 @@ public class MetrovalenciaConfiguration {
     
     @Bean
     public Step getMetrovalenciaTimetables() {
+        
+        
         return this.stepBuilderFactory.get("getMetrovalenciaTimetables")
-                .<TimetableDto, TimetableDto>chunk(1)
-                .reader(new TimetablesItemReader(webClientBuilder))
+                .<ServicesLookupDto, List<TimetableDto>>chunk(10)
+                .reader(servicesLookupItemReader(dataSource, null))
                 .writer(new TimetablesWriter())
                 .build();
     }
     
     @Bean
+    @StepScope
+    public JdbcPagingItemReader<ServicesLookupDto> servicesLookupItemReader(DataSource dataSource, PagingQueryProvider queryProvider) {
+        return new JdbcPagingItemReaderBuilder<ServicesLookupDto>()
+                .name("servicesLookupItemReader")
+                .dataSource(dataSource)
+                .queryProvider(queryProvider)
+                //.rowMapper(new ServicesLookupRowMapper())
+                .build();
+    }
+
+//    @Bean
+//    public PagingQueryProvider servicesLookupPagingQueryProvider(DataSource dataSource) {
+//        
+//        SqlPagingQueryProviderFactoryBean factoryBean = new SqlPagingQueryProviderFactoryBean();
+//        
+//        factoryBean.setDataSource(dataSource);
+//        factoryBean.setSelectClause("SELECT *");
+//        factoryBean.setFromClause("FROM METROVALENCIA.BATCH_SERVICES_LOOKUP ");
+//        factoryBean.setSortKey("SERVICE_DATE");
+//        
+//        try {
+//            return factoryBean.getObject();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
+
+    @Bean
     public Step getMetrovalenciaServicesLookup() {
         return this.stepBuilderFactory.get("getMetrovalenciaServicesLookup")
-                .tasklet(new ServicesLookupTasklet(jdbcTemplate, namedJdbcTemplate))
-                .build();
+                .tasklet(new ServicesLookupTasklet(jdbcTemplate, namedJdbcTemplate)).build();
     }
 
     // @formatter:on

@@ -22,4 +22,7 @@ public class TimetableDto {
     @JsonAlias("DEPARTURE_TIME")
     private Time departureTime;
 
+    @JsonAlias("SERVICE_ID")
+    private Long serviceID;
+
 }
